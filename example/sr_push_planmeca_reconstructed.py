@@ -27,21 +27,18 @@ parser.add_argument(
 args = parser.parse_args()
 
 path = args.path
-proj = tifffile.imread(path)
+path2 = '/export/scratch2/schoonho/Planmeca/results/original_rec_pht=2_bottom.tif'
+vol = (tifffile.imread(path2)).astype(np.float32)
+print(vol.shape)
+vol = vol / vol.max()
 
-t = [i for i in range(0,360,1)]
-angles = np.array(t)*np.pi/180
-rows = 320
-cols = 320
-proj_count = len(angles)
-proj_geom = astra.create_proj_geom('cone', 1.0, 1.0, 320, 320, angles, 1000, 0)
-vol_geom = astra.create_vol_geom(320, 320, 320)
-proj_geom = astra.functions.geom_2vec(proj_geom)
+dimX = 1001
+dimY = 1001
+dimZ = 511
+
+vol_geom = astra.create_vol_geom(dimX, dimY, dimZ)
 
 pub = tomop.publisher(args.host, args.port)
-
-# send astra geometry
-print('proj geom vector count', len(proj_geom['Vectors']))
 
 packet_vol_geom = tomop.geometry_specification_packet(0, [
     vol_geom['option']['WindowMinX'], vol_geom['option']['WindowMinY'],
@@ -57,13 +54,11 @@ packet_scan_settings = tomop.scan_settings_packet(0, 0, 0)
 if not args.skipgeometry:
     pub.send(packet_scan_settings)
 
-packet_geometry = tomop.cone_vec_geometry_packet(
-    0, rows, cols, proj_count, proj_geom['Vectors'].flatten())
-if not args.skipgeometry:
-    pub.send(packet_geometry)
+packet_vol = tomop.volume_data_packet(0, [dimZ, dimX, dimY],
+        np.ascontiguousarray(vol.flatten()))
+pub.send(packet_vol)
 
-proj = np.swapaxes(proj, 0, 1)
-for i in np.arange(0, proj_count):
-    packet_proj = tomop.projection_packet(
-        2, i, [rows, cols], np.ascontiguousarray(proj[i].flatten()))
-    pub.send(packet_proj)
+#for i in np.arange(0, vol.shape[2]):
+#    packet_vol = tomop.volume_data_packet(
+#            0, [dimX, dimY], np.ascontiguousarray(vol[:,:,i].flatten()))
+   # pub.send(packet_vol)

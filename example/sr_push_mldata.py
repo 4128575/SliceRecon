@@ -28,14 +28,24 @@ args = parser.parse_args()
 
 path = args.path
 proj = tifffile.imread(path)
-
-t = [i for i in range(0,360,1)]
+n = 2*proj.shape[0]//3
+print(n)
+factor = 3*n//2
+rows = proj.shape[0]
+cols = proj.shape[2]
+nr_angles = proj.shape[1]
+t = np.linspace(0.0, 360.0, num=nr_angles, endpoint=False)
 angles = np.array(t)*np.pi/180
-rows = 320
-cols = 320
 proj_count = len(angles)
-proj_geom = astra.create_proj_geom('cone', 1.0, 1.0, 320, 320, angles, 1000, 0)
-vol_geom = astra.create_vol_geom(320, 320, 320)
+
+print(proj.min(),proj.max())
+dark = np.full((rows,cols), 0).astype(np.float32)
+flat = np.full((rows,cols), 1).astype(np.float32)
+proj = np.exp(-proj)
+print(proj.shape)
+
+proj_geom = astra.create_proj_geom('cone', 1.0, 1.0, factor, factor, angles, 1000, 0)
+vol_geom = astra.create_vol_geom(n,n,n)
 proj_geom = astra.functions.geom_2vec(proj_geom)
 
 pub = tomop.publisher(args.host, args.port)
@@ -53,7 +63,11 @@ packet_vol_geom = tomop.geometry_specification_packet(0, [
 if not args.skipgeometry:
     pub.send(packet_vol_geom)
 
-packet_scan_settings = tomop.scan_settings_packet(0, 0, 0)
+packet_scan_settings = tomop.scan_settings_packet(0, 1, 1)
+
+import inspect
+print(dir(tomop.scan_settings_packet))
+
 if not args.skipgeometry:
     pub.send(packet_scan_settings)
 
@@ -61,6 +75,14 @@ packet_geometry = tomop.cone_vec_geometry_packet(
     0, rows, cols, proj_count, proj_geom['Vectors'].flatten())
 if not args.skipgeometry:
     pub.send(packet_geometry)
+
+packet_dark = tomop.projection_packet(
+    0, 0, [rows, cols], np.ascontiguousarray(dark.flatten()))
+pub.send(packet_dark)
+
+packet_light = tomop.projection_packet(
+    1, 0, [rows, cols], np.ascontiguousarray(flat.flatten()))
+pub.send(packet_light)
 
 proj = np.swapaxes(proj, 0, 1)
 for i in np.arange(0, proj_count):

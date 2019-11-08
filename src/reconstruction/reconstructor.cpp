@@ -291,8 +291,8 @@ cone_beam_solver::cone_beam_solver(settings parameters,
         slicerecon::util::log << LOG_FILE << slicerecon::util::lvl::info
                               << slicerecon::util::info(*proj_geom_)
                               << slicerecon::util::end_log;
-
-        proj_geom_small_ =
+        
+	proj_geom_small_ =
             std::make_unique<astra::CConeVecProjectionGeometry3D>(
                 geometry_.proj_count, geometry_.rows, geometry_.cols,
                 cone_projs.data());
