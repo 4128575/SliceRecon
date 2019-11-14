@@ -69,6 +69,7 @@ def load_network(net_path):
     print(c_in, num_labels, depth, width, dilations)
     model = mp.MSDSegmentationModel(c_in, num_labels, depth, width, dilations=dilations)
     model.load(net_path)
+    print("Loaded network...")
     return model
 
 model = load_network(net_path)
@@ -76,9 +77,10 @@ model = load_network(net_path)
 def callback(shape, xs, idx):
     xs = np.array(xs).reshape(shape)
     print(xs.min(), xs.max())
-    #xs /= ((-1/3)*(xs.max() - xs.min()))
+    if (xs.max() - xs.min()) != 0:
+        xs /= ((1/1)*(xs.max() - xs.min()))
     print(xs.min(), xs.max())
-    if xs.shape[0] < 128:
+    if xs.shape[0] < 256:
         return [shape, xs.ravel().tolist()]
     xs = torch.Tensor([[xs]])
     print(xs.size())

@@ -24,6 +24,8 @@ parser.add_argument(
     '--skipgeometry',
     action='store_true',
     help='assume the geometry packet is already sent')
+parser.add_argument(
+    '--linearize', action='store_true', help='whether data is linear')
 args = parser.parse_args()
 
 path = args.path
@@ -63,26 +65,26 @@ packet_vol_geom = tomop.geometry_specification_packet(0, [
 if not args.skipgeometry:
     pub.send(packet_vol_geom)
 
-packet_scan_settings = tomop.scan_settings_packet(0, 1, 1)
 
-import inspect
-print(dir(tomop.scan_settings_packet))
-
+packet_scan_settings = tomop.scan_settings_packet(0, 0, 0)
 if not args.skipgeometry:
     pub.send(packet_scan_settings)
+
+#print("Sending scan data (linear: ", not args.linearize, ")")
+#pub.send(tomop.scan_settings_packet(0, 0, 0, not args.linearize))
 
 packet_geometry = tomop.cone_vec_geometry_packet(
     0, rows, cols, proj_count, proj_geom['Vectors'].flatten())
 if not args.skipgeometry:
     pub.send(packet_geometry)
 
-packet_dark = tomop.projection_packet(
-    0, 0, [rows, cols], np.ascontiguousarray(dark.flatten()))
-pub.send(packet_dark)
+#packet_dark = tomop.projection_packet(
+#    0, 0, [rows, cols], np.ascontiguousarray(dark.flatten()))
+#pub.send(packet_dark)
 
-packet_light = tomop.projection_packet(
-    1, 0, [rows, cols], np.ascontiguousarray(flat.flatten()))
-pub.send(packet_light)
+#packet_light = tomop.projection_packet(
+#    1, 0, [rows, cols], np.ascontiguousarray(flat.flatten()))
+#pub.send(packet_light)
 
 proj = np.swapaxes(proj, 0, 1)
 for i in np.arange(0, proj_count):
