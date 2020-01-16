@@ -24,11 +24,16 @@ threshold = set_threshold(sys.argv[1:])
 
 def callback(shape, xs, idx):
     xs = np.array(xs).reshape(shape)
+    print(xs.max(), xs.min())
+    if xs.max() - xs.min() != 0:
+        xs = (xs / (xs.max() - xs.min()))
 
     print("callback called", shape)
-    xs[xs <= threshold] = 0.0
     xs[xs > threshold] = 10.0
-
+    xs[xs <= threshold] = 0.0
+    xs *= -1.0
+    xs += 10.0
+    print(xs.max(),xs.min())
     return [shape, xs.ravel().tolist()]
 
 p = slicerecon.plugin("tcp://*:5652", "tcp://localhost:5555")
