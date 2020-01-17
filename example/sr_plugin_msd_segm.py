@@ -94,10 +94,11 @@ def callback(shape, xs, idx):
     
     start = timer()
     xs = torch.Tensor([[xs]]).to('cuda:0')
-    model.forward(xs, xs)
+#    model.forward(xs, xs)
+    output = model.net(xs)
     end = timer()
     #preds = model.output.detach().cpu()[0][label].exp().data.numpy()
-    _, preds = torch.max(model.output, label)
+    _, preds = torch.max(output, label)
     preds = preds.cpu().detach().numpy().astype(np.float32)
 
     time += 1000*(end-start)
